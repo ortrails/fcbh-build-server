@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<Import Project="$(MSBuildProjectDirectory)\.build\MSBuild.Community.Tasks.targets"/>
+	<UsingTask AssemblyFile="$(MSBuildProjectDirectory)\packages\MSBuild.Extension.Pack.1.7.0\tools\net40\MSBuild.ExtensionPack.dll" TaskName="MSBuild.ExtensionPack.Framework.Assembly"/>
+
+	<PropertyGroup Condition=" '$(BuildConfiguration)' == '' ">
+		<BuildConfiguration>Release</BuildConfiguration>
+		<!--<MSBuildCommunityTasksPath>$(MSBuildProjectDirectory)\.build</MSBuildCommunityTasksPath>-->
+		<ProjectName>Render.MainApplication\Render.MainApplication</ProjectName>
+		<!--properties for the project-build-->
+		<DefaultBuildProperties>Configuration=$(BuildConfiguration)</DefaultBuildProperties>
+		<!-- location of the click-once stuff, relative to the project -->
+		<ProjectPublishLocation>.\Render.MainApplication\bin\$(BuildConfiguration)\app.publish</ProjectPublishLocation>
+	</PropertyGroup>
+
+	<Target Name="Clean">
+		<Message Text="Clean project" />
+		<MSBuild Projects="./$(ProjectName).csproj"
+		Properties="$(DefaultBuildProperties)"
+		Targets="Clean"/>
+	</Target>
+
+	<Target Name="Version">
+		<Time>
+			<Output TaskParameter="Year" PropertyName="Year" />
+		</Time>
+
+		<Attrib Files="$(MSBuildProjectDirectory)\GlobalAssemblyInfo.cs" ReadOnly="False" />
+
+		<GitDescribe LocalPath="$(MSBuildCommunityTasksPath)" LightWeight="true">
+			<Output TaskParameter="Tag" PropertyName="Tag" />
+			<Output TaskParameter="CommitCount" PropertyName="CommitCount" />
+		</GitDescribe>
+		<GitVersion LocalPath="$(MSBuildCommunityTasksPath)">
+			<Output TaskParameter="CommitHash" PropertyName="CommitHash" />
+		</GitVersion>
+
+		<PropertyGroup>
+			<AssemblyInformationalVersion>$(Tag)-$(CommitCount)-$(CommitHash)</AssemblyInformationalVersion>
+			<!-- URL for click-once deployment. Important for updating the setup.exe file. -->
+			<ProjectClickOnceSetupUrl>http://$(WebServerName)/$(WebServerPath)/Render/$(AssemblyInformationalVersion)</ProjectClickOnceSetupUrl>
+			<!-- Location wherein to copy the click-once deployment. -->
+			<ProjectClickOnceFolder>C:\Publish\$(WebServerPath)\Render\$(AssemblyInformationalVersion)</ProjectClickOnceFolder>
+		</PropertyGroup>
+
+		<MSBuild.ExtensionPack.Framework.Assembly TaskAction="GetInfo" NetAssembly=".\Render.MainApplication\bin\$(BuildConfiguration)\Render.MainApplication.exe">
+			<Output TaskParameter="OutputItems" ItemName="Info" />
+		</MSBuild.ExtensionPack.Framework.Assembly>
+		<Message Text="AssemblyFileVersion = %(Info.FileVersion)" />
+		<Message Text="AssemblyVersion = %(Info.AssemblyVersion)" />
+		<Message Text="AssemblyInformationalVersion: %(Info.AssemblyInformationalVersion)" />
+		<Message Text="Build Number: $(BUILD_NUMBER)"/>
+		<Message Text="$(Version)"/>
+
+		<AssemblyInfo CodeLanguage="CS"
+                  OutputFile="$(MSBuildProjectDirectory)\GlobalAssemblyInfo.cs"
+                  GenerateClass="true"
+									AssemblyTitle="Render"
+									AssemblyDescription="Software for oral Bible translation."
+									AssemblyCompany="Faith Comes By Hearing"
+									AssemblyProduct="Render"
+                  AssemblyCopyright="Copyright © $(Year). All rights reserved."
+                  AssemblyConfiguration="$(BuildConfiguration)"
+									ComVisible="false"
+									CLSCompliant="true"
+                  AssemblyVersion="%(Info.AssemblyVersion)"
+                  AssemblyFileVersion="%(Info.FileVersion)"
+									AssemblyInformationalVersion="$(Tag)-$(CommitCount)-$(CommitHash)"/>
+	</Target>
+
+	<!-- Projects to Build -->
+	<ItemGroup>
+		<ProjectFiles Include="$(MSBuildProjectDirectory)\**\*.sln">
+			<Properties>Configuration=$(BuildConfiguration)</Properties>
+		</ProjectFiles>
+	</ItemGroup>
+
+	<Target Name="Test">
+		<Message Text="ProjectFiles: @(ProjectFiles)"></Message>
+		<Message Text="MSBuildCommunityTasksLib: $(MSBuildCommunityTasksLib)"></Message>
+	</Target>
+
+	<Target Name="Build">
+		<MSBuild Projects="@(ProjectFiles)"/>
+		<!--<CallTarget Targets="Compile" />-->
+		<CallTarget Targets="Publish" />
+	</Target>
+
+	<Target Name="Publish" DependsOnTargets="Version">
+		<Message Text="Publish-Build started for build no $(ApplicationRevision)" />
+
+		<!-- run the original build of the project -->
+		<MSBuild Projects="./$(ProjectPath)$(ProjectName).csproj"
+		Properties="$(DefaultBuildProperties)"
+		Targets="Publish" />
+
+		<Message Text="ProjectPublishLocation: $(ProjectPublishLocation)"></Message>
+		<Message Text="ProjectClickOnceFolder: $(ProjectClickOnceFolder)"></Message>
+		<Message Text="$(ProjectClickOnceSetupUrl)"></Message>
+
+		<!-- define the files required for click-once-->
+		<ItemGroup>
+			<SetupFiles Include="$(ProjectPublishLocation)\*.*"/>
+			<UpdateFiles Include="$(ProjectPublishLocation)\Application Files\**\*.*"/>
+		</ItemGroup>
+		<!-- and copy them -->
+		<Copy
+		SourceFiles="@(SetupFiles)"
+		DestinationFolder="$(ProjectClickOnceFolder)\"/>
+		<Copy
+		SourceFiles="@(UpdateFiles)"
+		DestinationFolder="$(ProjectClickOnceFolder)\Application Files\%(RecursiveDir)"/>
+
+		<Copy SourceFiles="publish.htm" DestinationFiles="$(ProjectClickOnceFolder)\publish.htm" />
+		<FileUpdate Files="$(ProjectClickOnceFolder)\publish.htm" IgnoreCase="true" Multiline="true" Singleline="false" Regex="{VERSION}" ReplacementText="$(AssemblyInformationalVersion)" />
+
+		<!-- update setup.exe to point to the correct deploymnet url -->
+		<Exec Command="$(ProjectClickOnceFolder)\setup.exe -URL=$(ProjectClickOnceSetupUrl)" />
+
+		<CallTarget Targets="Clean" />
+	</Target>
+
+</Project>

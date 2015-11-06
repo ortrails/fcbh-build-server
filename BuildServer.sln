@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24627.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Render", "Render\Render.csproj", "{70643D68-DB6F-4E2D-ABA5-9AC04078096D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{2BC9B954-B8AF-4E2C-9D10-0026B31554A0}"
+	ProjectSection(SolutionItems) = preProject
+		.build\MSBuild.Community.Tasks.dll = .build\MSBuild.Community.Tasks.dll
+		.build\MSBuild.Community.Tasks.targets = .build\MSBuild.Community.Tasks.targets
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{70643D68-DB6F-4E2D-ABA5-9AC04078096D}.Debug|x86.ActiveCfg = Debug|x86
+		{70643D68-DB6F-4E2D-ABA5-9AC04078096D}.Debug|x86.Build.0 = Debug|x86
+		{70643D68-DB6F-4E2D-ABA5-9AC04078096D}.Release|x86.ActiveCfg = Release|x86
+		{70643D68-DB6F-4E2D-ABA5-9AC04078096D}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
